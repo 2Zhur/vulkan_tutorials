@@ -1,1 +1,2 @@
 # vulkan_tutorials
+This repository is supposed to follow in the footsteps of the Vulkan API tutorial (https://vulkan-tutorial.com/). Nevertheless, diviations and mistakes are highly likely to appear throught the code, and they may not be clearly marked. This doesn't mean though that I will not make an effort to emphasize them where and when possible.
