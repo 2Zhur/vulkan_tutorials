@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
 
 /**
  * A quick side note on code styling: I prefer to use
@@ -50,13 +51,25 @@ private:
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.pApplicationInfo = &app_info;
 
-        /// Right now we will only need an extension to interface with
-        /// the application window, which is done through GLFW
+        // request necessary extensions from GLFW
         uint32_t glfw_extesion_count = 0;
         const char** glfw_extensions;
-
-        // request necessary extensions from GLFW
         glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extesion_count);
+
+        // query all availible extentions
+        uint32_t extention_count = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extention_count, nullptr);
+        std::vector<VkExtensionProperties> extensions(extention_count);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extention_count, extensions.data());
+
+        // display extension data
+        std::cout << "availible extensions:\n";
+
+        for (const auto& extension : extensions) {
+            std::cout << '\t' << extension.extensionName << '\n';
+        }
+        std::cout << std::flush;
+
         // add extension info appInfofor the Vulkan instance 
         create_info.enabledExtensionCount = glfw_extesion_count;
         create_info.ppEnabledExtensionNames = glfw_extensions;
@@ -70,7 +83,6 @@ private:
         if (vkCreateInstance(&create_info, nullptr, &_instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create a Vulkan instance!");
         }
-
 
         /*  */
     }
