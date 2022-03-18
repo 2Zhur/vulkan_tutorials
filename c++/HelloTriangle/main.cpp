@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
+#include <cstring>
 
 /**
  * A quick side note on code styling: I prefer to use
@@ -31,12 +32,42 @@ private:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         // disable window resizing for now
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
+        // create the window
         _window = glfwCreateWindow(_width, _hight, "Vulkan", nullptr, nullptr);
+    }
 
+    bool check_validation_layer_support() {
+        // gather info about available validation layers
+        uint32_t layer_count;
+        vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+        std::vector<VkLayerProperties> available_layers(layer_count);
+        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+        // compare the acquired list of available validation
+        // layer to the list of requested ones
+        for (const char* layer_name : _validation_layers) {
+            bool layer_found = false;
+            
+            for (const auto& layer_properties : available_layers) {
+                if (strcmp(layer_name, layer_properties.layerName) == 0) {
+                    layer_found = true;
+                    break;
+                }
+            }
+
+            if (!layer_found) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     void create_instance() {
+        if (_enable_validation_layers && !check_validation_layer_support()) {
+            throw std::runtime_error("some of the requested validation layers are unavailable!");
+        }
+
         /* Fill out application information for the Vulkan instance */
         VkApplicationInfo app_info{};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -73,8 +104,13 @@ private:
         // add extension info appInfofor the Vulkan instance 
         create_info.enabledExtensionCount = glfw_extesion_count;
         create_info.ppEnabledExtensionNames = glfw_extensions;
-        // more about validation layers later; for now just plug a zero
-        create_info.enabledLayerCount = 0;
+        // enable requested validation layers, if any
+        if (_enable_validation_layers) {
+            create_info.enabledLayerCount = static_cast<uint32_t>(_validation_layers.size());
+            create_info.ppEnabledLayerNames = _validation_layers.data();
+        } else {
+            create_info.enabledLayerCount = 0;
+        }
 
         /* Create the Vulkan instance */
         // NOTE: custom allocator callbacks will not be used throughout
@@ -102,12 +138,24 @@ private:
         glfwTerminate();
     }
 
-    // Private members
+
+    /* Private members */
     VkInstance _instance;
 
     GLFWwindow* _window;
     const uint32_t _width = 800;
     const uint32_t _hight = 600;
+
+    // validation layers
+    const std::vector<const char*> _validation_layers = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+
+#ifdef NDEBUG
+    const bool _enable_validation_layers = false;
+#else
+    const bool _enable_validation_layers = true;
+#endif
 };
 
 int main() {
