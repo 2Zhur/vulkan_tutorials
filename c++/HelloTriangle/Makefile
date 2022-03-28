@@ -1,9 +1,11 @@
 CFLAGS = -std=c++17 -O2
 
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
+INCLUDE = -I./
+SRC = $(wildcard *.cpp)
 
-HelloTriangle: main.cpp
-	g++ $(CFLAGS) -o HelloTriangle main.cpp $(LDFLAGS)
+HelloTriangle: 
+	g++ $(CFLAGS) $(INCLUDE) -o HelloTriangle $(SRC) $(LDFLAGS)
 
 .PHONY: test clean
 
