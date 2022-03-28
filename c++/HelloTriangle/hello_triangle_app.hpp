@@ -13,9 +13,9 @@ public:
     void run();
 
 private:
-    void _init_window();
+    void init_window();
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL _debug_callback(
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
         VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT message_type,
         const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
@@ -25,32 +25,32 @@ private:
         return VK_FALSE;
     }
 
-    bool _check_validation_layer_support();
-    void _setup_debug_messenger();
-    void _create_instance();
-    void _init_vulkan();
-    void _main_loop();
-    void _cleanup();
+    bool check_validation_layer_support();
+    void setup_debug_messenger();
+    void create_instance();
+    void init_vulkan();
+    void main_loop();
+    void cleanup();
 
-    std::vector<const char*> _get_required_extensions();
+    std::vector<const char*> get_required_extensions();
 
     /* Private members */
     // Vulkan instance
-    VkInstance _instance;
+    VkInstance instance;
     // the application window and its parameters
-    GLFWwindow* _window;
-    const uint32_t _width = 800;
-    const uint32_t _hight = 600;
+    GLFWwindow* window;
+    const uint32_t width = 800;
+    const uint32_t hight = 600;
     // validation layers
-    const std::vector<const char*> _validation_layers = {
+    const std::vector<const char*> validation_layers = {
         "VK_LAYER_KHRONOS_validation"
     };
     // debug messenger function handle
-    VkDebugUtilsMessengerEXT _debug_messenger;
+    VkDebugUtilsMessengerEXT debug_messenger;
     // validation layers on/off switch
 #ifdef NDEBUG
-    const bool _enable_validation_layers = false;
+    const bool enable_validation_layers = false;
 #else
-    const bool _enable_validation_layers = true;
+    const bool enable_validation_layers = true;
 #endif
 };

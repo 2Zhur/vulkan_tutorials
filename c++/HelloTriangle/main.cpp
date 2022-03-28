@@ -5,7 +5,7 @@
  * snake-case instead of camelback-case. It is consistent
  * with the style of the standard library and I consider it
  * to be more aesthetically pleasing. As a bonus, it allows
- * to better differenciate between API calls and my own code
+ * to better differenciate between API calls and my own code.
  */
 
 VkResult create_debug_utils_messenger(
