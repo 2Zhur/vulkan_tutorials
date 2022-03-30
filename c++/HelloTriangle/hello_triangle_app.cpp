@@ -1,14 +1,31 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-#include <vector>
-#include <cstring>
-
 #include <hello_triangle_app.hpp>
 
+
+VkResult create_debug_utils_messenger(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* create_info,
+    const VkAllocationCallbacks* allocator,
+    VkDebugUtilsMessengerEXT* debug_messenger) {
+    
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+
+    if (func != nullptr) {
+        return func(instance, create_info, allocator, debug_messenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void destroy_debug_utils_messenger(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT debug_messenger,
+    const VkAllocationCallbacks* allocator) {
+    
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debug_messenger, allocator);
+    }
+}
 
 void hello_triangle_application::run() {
     init_window();
@@ -50,10 +67,10 @@ bool hello_triangle_application::check_validation_layer_support() {
     return true;
 }
 
-void hello_triangle_application::setup_debug_messenger() {
-    if (!enable_validation_layers) return;
+void hello_triangle_application::populate_debug_messenger_create_info(
+    VkDebugUtilsMessengerCreateInfoEXT& create_info) {
 
-    VkDebugUtilsMessengerCreateInfoEXT create_info{};
+    create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
                                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -62,7 +79,41 @@ void hello_triangle_application::setup_debug_messenger() {
                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                               VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     create_info.pfnUserCallback = debug_callback;
-    create_info.pUserData = nullptr; // optional
+    // create_info.pUserData = nullptr; // optional
+}
+
+void hello_triangle_application::setup_debug_messenger() {
+    if (!enable_validation_layers) return;
+
+    VkDebugUtilsMessengerCreateInfoEXT create_info;
+    populate_debug_messenger_create_info(create_info);
+    if (create_debug_utils_messenger(instance, &create_info, nullptr, &debug_messenger) != VK_SUCCESS) {
+        throw std::runtime_error("failed to set up debug messenger!");
+    }
+}
+
+void hello_triangle_application::pick_physical_device() {
+    uint32_t device_count = 0;
+    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+    if (device_count == 0) {
+        throw std::runtime_error("failed to find GPUs with Vulkan support!");
+    }
+    std::vector<VkPhysicalDevice> devices(device_count);
+    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+
+    /*
+    auto is_device_suitable = [] (VkPhysicalDevice device) { return true; };
+
+    for (const auto& device : devices) {
+        if (is_device_suitable(device)) {
+            break;
+        }
+    }
+
+    if (physical_device == VK_NULL_HANDLE) {
+        throw std::runtime_error("failed to find a suitable GPU!");
+    }
+    */
 }
 
 std::vector<const char*> hello_triangle_application::get_required_extensions() {
@@ -90,33 +141,26 @@ void hello_triangle_application::create_instance() {
     app_info.pEngineName = "No Engine";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_API_VERSION_1_0;
+    
     /* Fill out Vulkan instance information */
     VkInstanceCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-    // request necessary extensions from GLFW
-    uint32_t glfw_extesion_count = 0;
-    const char** glfw_extensions;
-    glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extesion_count);
     // query all availible extentions
-    /*
     uint32_t extention_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extention_count, nullptr);
     std::vector<VkExtensionProperties> extensions(extention_count);
     vkEnumerateInstanceExtensionProperties(nullptr, &extention_count, extensions.data());
-    */
-    /*
     // display extension data
     std::cout << "availible extensions:\n";
     for (const auto& extension : extensions) {
         std::cout << '\t' << extension.extensionName << '\n';
     }
     std::cout << std::flush;
-    */
     // add extension info for the Vulkan instance 
-    auto extensions = get_required_extensions();
-    create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    create_info.ppEnabledExtensionNames = extensions.data();
+    auto glfw_extensions = get_required_extensions();
+    create_info.enabledExtensionCount = static_cast<uint32_t>(glfw_extensions.size());
+    create_info.ppEnabledExtensionNames = glfw_extensions.data();
     // enable requested validation layers, if any
     if (enable_validation_layers) {
         create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
@@ -124,6 +168,19 @@ void hello_triangle_application::create_instance() {
     } else {
         create_info.enabledLayerCount = 0;
     }
+
+    /* Add debug functionality */
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
+    if (enable_validation_layers) {
+        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        create_info.ppEnabledLayerNames = validation_layers.data();
+        populate_debug_messenger_create_info(debug_create_info);
+        create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debug_create_info;
+    } else {
+        create_info.enabledLayerCount = 0;
+        create_info.pNext = nullptr;
+    }
+    
     /* Create the Vulkan instance */
     // NOTE: custom allocator callbacks will not be used throughout
     //       this tutorial, and for this reason the second argument
@@ -131,10 +188,13 @@ void hello_triangle_application::create_instance() {
     if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error("failed to create a Vulkan instance!");
     }
+
 }
 
 void hello_triangle_application::init_vulkan() {
     create_instance();
+    setup_debug_messenger();
+    pick_physical_device();
 }
 
 void hello_triangle_application::main_loop() {
@@ -144,6 +204,10 @@ void hello_triangle_application::main_loop() {
 }
 
 void hello_triangle_application::cleanup() {
+    if (enable_validation_layers) {
+        destroy_debug_utils_messenger(instance, debug_messenger, nullptr);
+    }
+    vkDestroyInstance(instance, nullptr);
     glfwDestroyWindow(window);
     glfwTerminate();
 }

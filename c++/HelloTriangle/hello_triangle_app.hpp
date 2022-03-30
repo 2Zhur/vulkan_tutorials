@@ -1,3 +1,5 @@
+#pragma once
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -6,6 +8,18 @@
 #include <cstdlib>
 #include <vector>
 #include <cstring>
+
+
+VkResult create_debug_utils_messenger(
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* create_info,
+    const VkAllocationCallbacks* allocator,
+    VkDebugUtilsMessengerEXT* debug_messenger);
+
+void destroy_debug_utils_messenger(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT debug_messenger,
+    const VkAllocationCallbacks* allocator);
 
 class hello_triangle_application
 {
@@ -26,7 +40,9 @@ private:
     }
 
     bool check_validation_layer_support();
+    void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info);
     void setup_debug_messenger();
+    void pick_physical_device();
     void create_instance();
     void init_vulkan();
     void main_loop();
@@ -47,6 +63,8 @@ private:
     };
     // debug messenger function handle
     VkDebugUtilsMessengerEXT debug_messenger;
+    // physical device handle
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     // validation layers on/off switch
 #ifdef NDEBUG
     const bool enable_validation_layers = false;

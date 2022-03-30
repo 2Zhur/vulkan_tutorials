@@ -8,20 +8,6 @@
  * to better differenciate between API calls and my own code.
  */
 
-VkResult create_debug_utils_messenger(
-    VkInstance instance,
-    const VkDebugUtilsMessengerCreateInfoEXT* create_info,
-    const VkAllocationCallbacks* allocator,
-    VkDebugUtilsMessengerEXT* debug_messenger) {
-    
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-
-    if (func != nullptr) {
-        return func(instance, create_info, allocator, debug_messenger);
-    } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
 
 int main() {
     hello_triangle_application app;
