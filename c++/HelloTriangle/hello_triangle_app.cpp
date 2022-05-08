@@ -27,6 +27,35 @@ void destroy_debug_utils_messenger(
     }
 }
 
+queue_family_indices hello_triangle_application::find_queue_families(VkPhysicalDevice device) {
+    queue_family_indices indices;
+
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
+
+
+    int i = 0;
+    for (const auto& queue_family : queue_families) {
+        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphics_family = i;
+        }
+        
+        VkBool32 present_support = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
+        if (present_support) {
+            indices.present_family = i;
+        }
+        if (indices.is_complete()) {
+            break;
+        }
+        i++;
+    }
+
+    return indices;
+}
+
 void hello_triangle_application::run() {
     init_window();
     init_vulkan();
@@ -67,6 +96,22 @@ bool hello_triangle_application::check_validation_layer_support() {
     return true;
 }
 
+void hello_triangle_application::setup_debug_messenger() {
+    if (!enable_validation_layers) return;
+
+    VkDebugUtilsMessengerCreateInfoEXT create_info;
+    populate_debug_messenger_create_info(create_info);
+    if (create_debug_utils_messenger(instance, &create_info, nullptr, &debug_messenger) != VK_SUCCESS) {
+        throw std::runtime_error("failed to set up debug messenger!");
+    }
+}
+
+void hello_triangle_application::create_surface() {
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create window surface!");
+    }
+}
+
 void hello_triangle_application::populate_debug_messenger_create_info(
     VkDebugUtilsMessengerCreateInfoEXT& create_info) {
 
@@ -82,16 +127,6 @@ void hello_triangle_application::populate_debug_messenger_create_info(
     // create_info.pUserData = nullptr; // optional
 }
 
-void hello_triangle_application::setup_debug_messenger() {
-    if (!enable_validation_layers) return;
-
-    VkDebugUtilsMessengerCreateInfoEXT create_info;
-    populate_debug_messenger_create_info(create_info);
-    if (create_debug_utils_messenger(instance, &create_info, nullptr, &debug_messenger) != VK_SUCCESS) {
-        throw std::runtime_error("failed to set up debug messenger!");
-    }
-}
-
 void hello_triangle_application::pick_physical_device() {
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
@@ -101,19 +136,19 @@ void hello_triangle_application::pick_physical_device() {
     std::vector<VkPhysicalDevice> devices(device_count);
     vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
 
-    /*
-    auto is_device_suitable = [] (VkPhysicalDevice device) { return true; };
+    auto is_device_suitable = [&] (VkPhysicalDevice device) {
+        return find_queue_families(device).is_complete();
+    };
 
     for (const auto& device : devices) {
         if (is_device_suitable(device)) {
+            physical_device = device;
             break;
         }
     }
-
     if (physical_device == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
-    */
 }
 
 std::vector<const char*> hello_triangle_application::get_required_extensions() {
@@ -191,10 +226,45 @@ void hello_triangle_application::create_instance() {
 
 }
 
+void hello_triangle_application::create_logical_device() {
+    queue_family_indices indices;
+
+    VkDeviceQueueCreateInfo queue_create_info{};
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    queue_create_info.queueFamilyIndex = indices.graphics_family.value();
+    queue_create_info.queueCount = 1;
+    float queue_priority = 1.0f;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    VkPhysicalDeviceFeatures device_features{}; // empty for now
+
+    VkDeviceCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    create_info.pQueueCreateInfos = &queue_create_info;
+    create_info.queueCreateInfoCount = 1;
+    create_info.pEnabledFeatures = &device_features;
+
+    create_info.enabledExtensionCount = 0;
+    if (enable_validation_layers) {
+        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        create_info.ppEnabledLayerNames = validation_layers.data();
+    } else {
+        create_info.enabledLayerCount = 0;
+    }
+
+    if (vkCreateDevice(physical_device, &create_info, nullptr, &logical_device) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create logical device");
+    }
+
+    vkGetDeviceQueue(logical_device, indices.graphics_family.value(), 0, &graphics_queue);
+}
+
 void hello_triangle_application::init_vulkan() {
     create_instance();
     setup_debug_messenger();
+    create_surface();
     pick_physical_device();
+    create_logical_device();
 }
 
 void hello_triangle_application::main_loop() {
@@ -207,6 +277,8 @@ void hello_triangle_application::cleanup() {
     if (enable_validation_layers) {
         destroy_debug_utils_messenger(instance, debug_messenger, nullptr);
     }
+    vkDestroyDevice(logical_device, nullptr);
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
     glfwDestroyWindow(window);
     glfwTerminate();
