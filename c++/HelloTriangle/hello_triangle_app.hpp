@@ -9,6 +9,9 @@
 #include <vector>
 #include <cstring>
 #include <optional>
+#include <set>
+
+#define NDBUG
 
 
 VkResult create_debug_utils_messenger(
@@ -78,6 +81,7 @@ private:
     };
     VkDebugUtilsMessengerEXT debug_messenger;
     VkSurfaceKHR surface;
+    VkQueue present_queue;
 #ifdef NDEBUG
     const bool enable_validation_layers = false;
 #else
