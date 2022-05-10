@@ -11,7 +11,7 @@
 #include <optional>
 #include <set>
 
-#define NDBUG
+//#define NDEBUG
 
 
 VkResult create_debug_utils_messenger(

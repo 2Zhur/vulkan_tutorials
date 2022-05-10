@@ -35,7 +35,6 @@ queue_family_indices hello_triangle_application::find_queue_families(VkPhysicalD
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
-
     int i = 0;
     for (const auto& queue_family : queue_families) {
         if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -235,7 +234,7 @@ void hello_triangle_application::create_logical_device() {
 
     float queue_priority = 1.0f;
     for (uint32_t queue_family : unique_queue_families) {
-        VkDeviceQueueCreateInfo queue_create_info;
+        VkDeviceQueueCreateInfo queue_create_info{};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
         queue_create_info.queueCount = 1;

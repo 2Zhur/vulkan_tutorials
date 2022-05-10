@@ -1,4 +1,7 @@
-CFLAGS = -std=c++17 -O3 $(DEBUG)
+CFLAGS = -std=c++17 -O3
+ifdef DBG
+CFLAGS += -g
+endif
 
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 INCLUDE = -I./
