@@ -34,7 +34,11 @@ struct queue_family_indices {
     }
 };
 
-
+struct swap_chain_support_details {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> present_modes;
+};
 
 
 class hello_triangle_application
@@ -56,6 +60,8 @@ private:
     }
 
     bool check_validation_layer_support();
+    bool check_device_extension_support(VkPhysicalDevice device);
+    bool is_device_suitable (VkPhysicalDevice device);
     void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info);
     void setup_debug_messenger();
     void create_surface();
@@ -68,6 +74,7 @@ private:
 
     std::vector<const char*> get_required_extensions();
     queue_family_indices find_queue_families(VkPhysicalDevice device);
+    swap_chain_support_details query_swap_chain_support(VkPhysicalDevice device);
 
     /* Private members */
     VkInstance instance;
@@ -78,6 +85,9 @@ private:
     
     const std::vector<const char*> validation_layers = {
         "VK_LAYER_KHRONOS_validation"
+    };
+    const std::vector<const char*> device_extensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
     VkDebugUtilsMessengerEXT debug_messenger;
     VkSurfaceKHR surface;

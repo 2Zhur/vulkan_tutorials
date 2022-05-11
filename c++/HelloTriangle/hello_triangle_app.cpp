@@ -95,6 +95,40 @@ bool hello_triangle_application::check_validation_layer_support() {
     return true;
 }
 
+bool hello_triangle_application::check_device_extension_support(VkPhysicalDevice device) {
+    uint32_t extension_count;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+    std::vector<VkExtensionProperties> available_extensions(extension_count);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
+    std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
+
+    for (const auto& extension : available_extensions) {
+        required_extensions.erase(extension.extensionName);
+    }
+
+    return required_extensions.empty();
+}
+
+swap_chain_support_details hello_triangle_application::query_swap_chain_support(VkPhysicalDevice device) {
+    swap_chain_support_details details;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+    uint32_t format_count;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
+    if (format_count != 0) {
+        details.formats.resize(format_count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, details.formats.data());
+    }
+
+    uint32_t present_mode_count;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
+    if (present_mode_count != 0) {
+        details.present_modes.resize(present_mode_count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, details.present_modes.data());
+    }
+    
+    return details;
+}
+
 void hello_triangle_application::setup_debug_messenger() {
     if (!enable_validation_layers) return;
 
@@ -126,6 +160,18 @@ void hello_triangle_application::populate_debug_messenger_create_info(
     // create_info.pUserData = nullptr; // optional
 }
 
+bool hello_triangle_application::is_device_suitable (VkPhysicalDevice device) {
+    auto indeces = find_queue_families(device);
+    bool extensions_supported = check_device_extension_support(device);
+    bool swap_chain_adequate = false;
+    if (extensions_supported) {
+        swap_chain_support_details swap_chain_support = query_swap_chain_support(device);
+        swap_chain_adequate = !swap_chain_support.formats.empty()
+                               && !swap_chain_support.present_modes.empty();
+    }
+    return indeces.is_complete() && extensions_supported && swap_chain_adequate;
+}
+
 void hello_triangle_application::pick_physical_device() {
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
@@ -135,9 +181,7 @@ void hello_triangle_application::pick_physical_device() {
     std::vector<VkPhysicalDevice> devices(device_count);
     vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
 
-    auto is_device_suitable = [&] (VkPhysicalDevice device) {
-        return find_queue_families(device).is_complete();
-    };
+    
 
     for (const auto& device : devices) {
         if (is_device_suitable(device)) {
@@ -247,11 +291,15 @@ void hello_triangle_application::create_logical_device() {
 
     VkDeviceCreateInfo create_info{};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
     create_info.pQueueCreateInfos = queue_create_infos.data();
     create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
+
     create_info.pEnabledFeatures = &device_features;
 
-    create_info.enabledExtensionCount = 0;
+    create_info.enabledExtensionCount = device_extensions.size();
+    create_info.ppEnabledExtensionNames = device_extensions.data();
+
     if (enable_validation_layers) {
         create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
         create_info.ppEnabledLayerNames = validation_layers.data();
