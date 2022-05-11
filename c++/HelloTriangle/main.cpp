@@ -1,4 +1,4 @@
-#include <hello_triangle_app.hpp>
+#include <vulkan_app.hpp>
 
 /**
  * A quick side note on code styling: I prefer to use
@@ -10,7 +10,7 @@
 
 
 int main() {
-    hello_triangle_application app;
+    vulkan_app app;
 
     try {
         app.run();
