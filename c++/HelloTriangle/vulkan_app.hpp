@@ -69,6 +69,7 @@ private:
     
     void create_logical_device();
     void create_swap_chain();
+    void create_image_views();
     void create_instance();
     void init_vulkan();
     void main_loop();
@@ -111,4 +112,5 @@ private:
     std::vector<VkImage> swap_chain_images;
     VkFormat swap_chain_image_format;
     VkExtent2D swap_chain_extent;
-}
+    std::vector<VkImageView> swap_chain_image_views;
+};

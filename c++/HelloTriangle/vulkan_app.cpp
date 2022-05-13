@@ -37,8 +37,11 @@ void vulkan_app::cleanup() {
     if (enable_validation_layers) {
         destroy_debug_utils_messenger(instance, debug_messenger, nullptr);
     }
-    vkDestroyDevice(logical_device, nullptr);
+    for (auto image_view : swap_chain_image_views) {
+        vkDestroyImageView(logical_device, image_view, nullptr);
+    }
     vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyDevice(logical_device, nullptr);
     vkDestroyInstance(instance, nullptr);
     glfwDestroyWindow(window);
     glfwTerminate();

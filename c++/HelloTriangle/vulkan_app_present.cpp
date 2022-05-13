@@ -106,4 +106,6 @@ void vulkan_app::create_swap_chain() {
     vkGetSwapchainImagesKHR(logical_device, swap_chain, &image_count, nullptr);
     swap_chain_images.resize(image_count);
     vkGetSwapchainImagesKHR(logical_device, swap_chain, &image_count, swap_chain_images.data());
+    swap_chain_image_format = surface_format.format;
+    swap_chain_extent = extent;
 }
