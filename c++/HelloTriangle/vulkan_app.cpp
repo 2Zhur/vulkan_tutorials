@@ -1,6 +1,5 @@
 #include <vulkan_app.hpp>
 
-
 void vulkan_app::run() {
     init_window();
     init_vulkan();
@@ -34,6 +33,7 @@ void vulkan_app::main_loop() {
 }
 
 void vulkan_app::cleanup() {
+    vkDestroySwapchainKHR(logical_device, swap_chain, nullptr); // SEGFAULT!
     if (enable_validation_layers) {
         destroy_debug_utils_messenger(instance, debug_messenger, nullptr);
     }

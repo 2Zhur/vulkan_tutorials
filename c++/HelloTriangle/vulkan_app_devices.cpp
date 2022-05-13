@@ -1,4 +1,5 @@
 #include <vulkan_app.hpp>
+#include <set>
 
 bool vulkan_app::check_device_extension_support(VkPhysicalDevice device) {
     uint32_t extension_count;

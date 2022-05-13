@@ -1,4 +1,5 @@
 #include <vulkan_app.hpp>
+#include <cstring>
 
 bool vulkan_app::check_validation_layer_support() {
     // gather info about available validation layers

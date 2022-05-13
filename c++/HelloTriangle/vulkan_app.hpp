@@ -7,9 +7,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <vector>
-#include <cstring>
 #include <optional>
-#include <set>
 
 //#define NDEBUG
 
@@ -64,13 +62,13 @@ private:
     void setup_debug_messenger();
 
     void create_surface();
-    VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
     
     void pick_physical_device();
     bool check_device_extension_support(VkPhysicalDevice device);
     bool is_device_suitable (VkPhysicalDevice device);
     
     void create_logical_device();
+    void create_swap_chain();
     void create_instance();
     void init_vulkan();
     void main_loop();
@@ -80,6 +78,9 @@ private:
 
     queue_family_indices find_queue_families(VkPhysicalDevice device);
     swap_chain_support_details query_swap_chain_support(VkPhysicalDevice device);
+    VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
+    VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
+    VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
 
     /* Private members */
     VkInstance instance;
@@ -106,4 +107,8 @@ private:
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice logical_device;
     VkQueue graphics_queue;
-};
+    VkSwapchainKHR swap_chain;
+    std::vector<VkImage> swap_chain_images;
+    VkFormat swap_chain_image_format;
+    VkExtent2D swap_chain_extent;
+}
