@@ -89,7 +89,7 @@ void vulkan_app::create_swap_chain() {
         create_info.pQueueFamilyIndices = queue_family_indices;
     }
     else {
-        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         create_info.queueFamilyIndexCount = 0;
         create_info.pQueueFamilyIndices = nullptr;
     }

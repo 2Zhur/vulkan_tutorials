@@ -24,6 +24,8 @@ void vulkan_app::init_vulkan() {
     create_surface();
     pick_physical_device();
     create_logical_device();
+    create_swap_chain();
+    create_image_views();
 }
 
 void vulkan_app::main_loop() {
@@ -40,8 +42,8 @@ void vulkan_app::cleanup() {
     for (auto image_view : swap_chain_image_views) {
         vkDestroyImageView(logical_device, image_view, nullptr);
     }
-    vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyDevice(logical_device, nullptr);
+    vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
     glfwDestroyWindow(window);
     glfwTerminate();
